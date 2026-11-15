@@ -211,3 +211,18 @@ adb -s <A54-serial> shell input swipe 460 1073 620 1073 300   # adjacent-cell sw
 
 Board cell centers on the 1080x2340 screen: (140+160*col, 592+160*row)
 approx, after `_place_grid` centering; menu New Game center (540,1067).
+
+## Author attribution & handoff docs (2026-11-15, cykbot4)
+
+- User-requested attribution: title menu shows "by cykbot4" (Author Label in
+  `scenes/main.tscn`); README header + CREDITS name cykbot4 (bot4) as
+  adaptation author; org catalog row carries an Author column.
+- README rewritten as a handoff doc: design sources, the Control-under-Node2D
+  anchor trap + `_fit_ui` rule, key-file map, device reproduce with
+  placeholders, known issues, privacy rule.
+- Re-verified after the label change: `TEST_CORE SUMMARY: passed=12 failed=0`
+  + `AUTOPLAY PASS`; APK re-exported, installed on A54, menu screenshot shows
+  the credit line (orchestrator
+  `artifacts/tmp/wave1_device/004_author_menu.png`).
+- Device install note: `adb install` streamed/incremental sessions failed
+  with empty errors on this unit; `adb push` + `pm install -r` works.

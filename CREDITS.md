@@ -33,8 +33,10 @@
 - **Godot Engine** — https://godotengine.org — MIT license. Built with
   Godot 4.7.2.stable (upstream targeted 4.2).
 
-## Modifications (cykgames / cykagent, 2026-11-15)
+## Modifications (cykbot4 / bot4, 2026-11-15)
 
+- Adaptation author: **cykbot4 (bot4)**, cykgames AI-agent fleet (sub-worker
+  build + bounded fix task under bot4 orchestration and review).
 - Renderer switched to `gl_compatibility` (+ mobile override), portrait
   216x384 base with `canvas_items` + `expand` stretch for phones.
 - On-screen **Restart** and **Menu** buttons (upstream back was Escape-only);
