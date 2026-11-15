@@ -1,0 +1,225 @@
+[gd_scene load_steps=19 format=3 uid="uid://b6do74c8c254k"]
+
+[ext_resource type="Script" path="res://scripts/game_ui.gd" id="1_tn0mm"]
+[ext_resource type="Script" path="res://scripts/score_manager.gd" id="2_btnxs"]
+[ext_resource type="Theme" uid="uid://yoxvktkljigt" path="res://resources/themes/ui_theme.tres" id="3_dsy0w"]
+[ext_resource type="Script" path="res://scripts/score.gd" id="4_0ssm6"]
+[ext_resource type="FontFile" uid="uid://d01nmtu7n50ss" path="res://assets/fonts/terminal-grotesque.ttf" id="5_a2ccs"]
+[ext_resource type="Script" path="res://scripts/shuffles.gd" id="6_m5hg8"]
+[ext_resource type="Script" path="res://scripts/progress_bar.gd" id="7_jogc1"]
+[ext_resource type="Texture2D" uid="uid://2o7efm2kdp63" path="res://assets/drawables/9pr_grid.png" id="9_2i22a"]
+[ext_resource type="Script" path="res://scripts/button_shuffle.gd" id="10_lw0op"]
+[ext_resource type="Script" path="res://debug/actions.gd" id="11_rwufq"]
+[ext_resource type="Script" path="res://scripts/grid.gd" id="12_yw37i"]
+[ext_resource type="Resource" uid="uid://etwy2pef8thk" path="res://resources/bat.tres" id="13_rpufc"]
+[ext_resource type="Resource" uid="uid://y588thyyfkmx" path="res://resources/candle.tres" id="14_bk1va"]
+[ext_resource type="Resource" uid="uid://k2jrlbrg028i" path="res://resources/ghost.tres" id="15_y0xqt"]
+[ext_resource type="Resource" uid="uid://c7ovlhbwxqf7g" path="res://resources/hat.tres" id="16_dqxrt"]
+[ext_resource type="Resource" uid="uid://pcg0e03y3xgx" path="res://resources/pumpkin.tres" id="17_uvfgo"]
+[ext_resource type="Script" path="res://scripts/piece_group_tweener.gd" id="18_nc1eg"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ff3w3"]
+bg_color = Color(0.894118, 0.490196, 0.294118, 1)
+border_width_bottom = 2
+border_color = Color(0.894118, 0.490196, 0.294118, 1)
+anti_aliasing = false
+
+[node name="GameUI" type="Control"]
+texture_filter = 1
+custom_minimum_size = Vector2(216, 384)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_tn0mm")
+
+[node name="ScoreManager" type="Node2D" parent="." node_paths=PackedStringArray("progress", "level", "button", "score")]
+script = ExtResource("2_btnxs")
+progress = NodePath("../HBoxContainer/TopBar/HBoxContainer/MarginContainer/CurrentLevelProgress")
+level = NodePath("../HBoxContainer/TopBar/HBoxContainer/HBoxContainer/Level")
+button = NodePath("../HBoxContainer/BottomBar/MarginContainer/HBoxContainer/Shuffle")
+score = NodePath("../HBoxContainer/TopBar/HBoxContainer/HBoxContainer/Score")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0941176, 0.121569, 0.152941, 1)
+
+[node name="CoverFirstRow" type="ColorRect" parent="."]
+z_index = 1
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+anchor_right = 1.0
+offset_top = 58.0
+offset_bottom = 68.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0941176, 0.121569, 0.152941, 1)
+
+[node name="HBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="ColorRect" parent="HBoxContainer"]
+z_index = 1
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.129412, 0.180392, 0.215686, 1)
+
+[node name="HBoxContainer" type="VBoxContainer" parent="HBoxContainer/TopBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="HBoxContainer" type="MarginContainer" parent="HBoxContainer/TopBar/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="Score" type="Label" parent="HBoxContainer/TopBar/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 1
+theme = ExtResource("3_dsy0w")
+theme_override_font_sizes/font_size = 18
+text = "0
+"
+horizontal_alignment = 1
+vertical_alignment = 2
+justification_flags = 0
+script = ExtResource("4_0ssm6")
+
+[node name="Level" type="Label" parent="HBoxContainer/TopBar/HBoxContainer/HBoxContainer"]
+z_index = 1
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_fonts/font = ExtResource("5_a2ccs")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_ff3w3")
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 2
+script = ExtResource("6_m5hg8")
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/TopBar/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="Control" type="Control" parent="HBoxContainer/TopBar/HBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="CurrentLevelProgress" type="ProgressBar" parent="HBoxContainer/TopBar/HBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_dsy0w")
+value = 50.0
+script = ExtResource("7_jogc1")
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
+z_index = 2
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
+
+[node name="GridBorder" type="NinePatchRect" parent="HBoxContainer/MarginContainer"]
+layout_mode = 2
+texture = ExtResource("9_2i22a")
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
+
+[node name="BottomBar" type="ColorRect" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.129412, 0.180392, 0.215686, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/BottomBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/BottomBar/MarginContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Shuffle" type="Button" parent="HBoxContainer/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_dsy0w")
+text = "Shuffle"
+script = ExtResource("10_lw0op")
+
+[node name="Restart" type="Button" parent="HBoxContainer/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_dsy0w")
+text = "Restart"
+
+[node name="Back" type="Button" parent="HBoxContainer/BottomBar/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_dsy0w")
+text = "Menu"
+
+[node name="Debug_actions" type="VBoxContainer" parent="."]
+visible = false
+clip_contents = true
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 320.0
+offset_top = 36.0
+offset_right = 820.0
+offset_bottom = -95.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+script = ExtResource("11_rwufq")
+
+[node name="CanvasGroup" type="CanvasGroup" parent="."]
+
+[node name="Grid" type="Node2D" parent="CanvasGroup"]
+position = Vector2(12, 61)
+script = ExtResource("12_yw37i")
+pieces_resources = Array[Resource("res://resources/scripts/piece_res.gd")]([ExtResource("13_rpufc"), ExtResource("14_bk1va"), ExtResource("15_y0xqt"), ExtResource("16_dqxrt"), ExtResource("17_uvfgo")])
+multipliers = Array[int]([1, 2, 5, 5])
+
+[node name="PieceGroupTweener" type="Node2D" parent="CanvasGroup/Grid"]
+script = ExtResource("18_nc1eg")
+
+[connection signal="value_changed" from="HBoxContainer/TopBar/HBoxContainer/MarginContainer/CurrentLevelProgress" to="HBoxContainer/TopBar/HBoxContainer/MarginContainer/CurrentLevelProgress" method="_on_value_changed"]
+[connection signal="focus_entered" from="HBoxContainer/BottomBar/MarginContainer/HBoxContainer/Shuffle" to="HBoxContainer/BottomBar/MarginContainer/HBoxContainer/Shuffle" method="_on_focus_entered"]
+[connection signal="pressed" from="HBoxContainer/BottomBar/MarginContainer/HBoxContainer/Shuffle" to="ScoreManager" method="_on_btn_shuffle_pressed"]
+[connection signal="pressed" from="HBoxContainer/BottomBar/MarginContainer/HBoxContainer/Restart" to="." method="_on_btn_restart_pressed"]
+[connection signal="pressed" from="HBoxContainer/BottomBar/MarginContainer/HBoxContainer/Back" to="." method="_on_btn_back_pressed"]
