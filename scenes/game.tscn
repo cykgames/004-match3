@@ -210,7 +210,7 @@ script = ExtResource("11_rwufq")
 [node name="CanvasGroup" type="CanvasGroup" parent="."]
 
 [node name="Grid" type="Node2D" parent="CanvasGroup"]
-position = Vector2(12, 61)
+position = Vector2(28, 61)
 script = ExtResource("12_yw37i")
 pieces_resources = Array[Resource("res://resources/scripts/piece_res.gd")]([ExtResource("13_rpufc"), ExtResource("14_bk1va"), ExtResource("15_y0xqt"), ExtResource("16_dqxrt"), ExtResource("17_uvfgo")])
 multipliers = Array[int]([1, 2, 5, 5])

@@ -18,12 +18,18 @@ func _ready():
     Events.game_over.connect(on_game_over)
     # Android hardware back button (Window signal, API 33+ handled by Godot).
     get_window().go_back_requested.connect(_on_go_back_request)
+    # UI roots are Controls parented to a Node2D: their anchor reference
+    # area is zero, so full-rect anchors collapse to the minimum size
+    # centered on the origin. Size them against the viewport instead.
+    get_viewport().size_changed.connect(_refit_ui)
+    _fit_ui(ui_menu)
 
 func on_game_over(score):
     _clear_ui_game_over()
     ui_game_over = UiGameOverPrefab.instantiate()
     ui_game_over.init(score)
     add_child(ui_game_over)
+    _fit_ui(ui_game_over)
 
 func _on_btn_new_game_pressed():
     # Clear first so this also works as "restart" from any state.
@@ -31,6 +37,24 @@ func _on_btn_new_game_pressed():
     _clear_ui_game_over()
     ui_game = UiGamePrefab.instantiate()
     add_child(ui_game)
+    _fit_ui(ui_game)
+
+## Pin a UI root Control to the viewport visible rect. Controls under a
+## Node2D have a zero anchor reference area (Godot 4), so anchors alone
+## cannot fill the screen; explicit size + top-left anchors are stable.
+func _fit_ui(ctrl):
+    if not is_instance_valid(ctrl):
+        return
+    ctrl.set_anchors_preset(Control.PRESET_TOP_LEFT)
+    ctrl.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+    ctrl.grow_vertical = Control.GROW_DIRECTION_BEGIN
+    ctrl.position = Vector2.ZERO
+    ctrl.size = get_viewport().get_visible_rect().size
+
+func _refit_ui():
+    _fit_ui(ui_menu)
+    _fit_ui(ui_game)
+    _fit_ui(ui_game_over)
 
 func _on_btn_exit_pressed():
     get_tree().quit()

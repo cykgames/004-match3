@@ -96,9 +96,14 @@ keystore), verified `lib/arm64-v8a/` only. Export exit 0.
 
 ## Open items
 
-- **On-device verification (parent, A54)**: drag-to-swap via Control
-  drag-drop with real touch; portrait expand layout on 1080x2340; Restart /
-  Menu / Android-back buttons; audio actually plays on device.
+- **On-device verification: DONE 2026-11-15 (fix task, A54 over USB)** — see
+  "Device full-screen fix" below. Drag-to-swap, portrait expand layout,
+  Restart/Menu buttons verified with real touch; audio on device still
+  untested.
+- **005-marble orientation anomaly** (landscape config renders portrait on
+  the same device) was NOT investigated by this fix task. It is NOT explained
+  by the 004 root cause below (004 is portrait by design); likely a separate
+  export/manifest or layout issue in that repo.
 - `Events.current_score` is never updated by upstream (score lives in the
   Score label); bot reads `Events.piece_scored` sum + label. Left as-is.
 - Level-up progress can hit inf at level 0 (upstream `0.9 / level` float
@@ -120,3 +125,89 @@ godot --headless --path . --export-debug "Android" build/match3.apk
 Privacy scan: `gh_sensitive_scan.py` (REPO retargeted to this dir; the
 original hardcodes godot-parkour and ignores argv) — result recorded in the
 worker report. Local commit only; **no push, no adb** per brief.
+
+## Device full-screen fix (2026-11-15, bounded fix task)
+
+Symptom (parent-verified, then reproduced here): cold start AND resume showed
+a dark 540x960 px fragment top-left on the 1080x2340 A54 screen, rest gray,
+only a left-cut "Exit" button. Headless tests were green, so device-only.
+
+### Root cause (evidence-backed)
+
+UI root Controls (`MainMenuUI`, `GameUI`, `GameOver`) are children of the
+Node2D `Main`. In Godot 4.7 a Control whose parent is NOT a Control has a
+**zero anchor reference area**: `get_parent_area_size()` returns (0,0) in
+every layout mode (0/1/3 tested headless). Full-rect anchors therefore
+compute a zero rect, clamped to `custom_minimum_size` 216x384 and centered
+on the origin by `grow_*=2` → rect `(-108,-192,216,384)`.
+
+The render transform was CORRECT all along (device logcat: content scale
+mode=canvas_items, aspect=expand, visible rect 216x468, screen transform
+scale 5.0). Only the bottom-right quadrant of the collapsed menu rect lands
+on screen: (0,0)..(108,192) units x 5 = exactly the observed 540x960 px
+fragment; Exit at (-98,2) x 5 = left edge -490 px (the left cut).
+
+Evidence: `build/logcat_probe2.txt` (M3DBG lines: win 1080x2340, css 216x384,
+xform 5.0, menu rect (-108,-192,216,384), exit (-98,2,196,37)); pixel analysis
+of the symptom screenshot (dark region exactly x0..539, y0..959; button
+y15..174, right edge 485) matches those rects x5 exactly. A headless SceneTree
+probe reproduced the identical collapsed rect → NOT device-specific, NOT an
+export/template/orientation problem.
+
+Ruled out with device evidence: the desktop-only `get_window().size *= 2`
+guard (OS.has_feature("android")=true on device, guard holds); stretch
+settings (all correct, scale 5.0); stale APK (fresh probe exports reproduced
+the symptom); orientation (004 is portrait by design).
+
+### What changed
+
+1. `scripts/main.gd`: `_fit_ui(ctrl)` pins each UI root to the viewport
+   visible rect (top-left anchors + explicit size, begin grow); called for
+   the menu in `_ready`, for game/game-over at instantiation, and for all
+   live roots on `viewport.size_changed`.
+2. `scripts/game_ui.gd`: `_place_grid()` centers the fixed 6x8 board inside
+   the stretching `GridBorder` rect (connected to `GridBorder.resized` +
+   deferred initial call). Piece sprites are center-anchored on cell
+   origins, so board content = grid pos +/- half cell.
+3. `scenes/game.tscn`: Grid x restored 12 → 28 (upstream value). With
+   center-anchored sprites, x=12 clipped the left column by 4 units (20 px)
+   and left dead space at right; the earlier "centering" fix had assumed
+   top-left-anchored sprites.
+
+### Verification
+
+- Headless after fix: `TEST_CORE SUMMARY: passed=12 failed=0` /
+  `TEST_CORE PASS`; `AUTOPLAY SUMMARY: elapsed=65.0s swaps=27 score=2112
+  ui_score=3880 game_overs=0 restarts=1 back_to_menu=1` / `AUTOPLAY PASS`;
+  import/test/autoplay logs contain 0 ERROR / 0 WARNING
+  (`build/*_final.log`).
+- Device (A54, USB, package com.cykagent.match3 only): cold start menu fills
+  1080x2340 with both buttons centered/readable; HOME + relaunch (resume)
+  renders the identical full-screen menu; gameplay board fully inside the
+  border, no clipped pieces; real `input swipe` between adjacent cells
+  changed score 252 → 729 (three swipes, cascades) and 902 on the final
+  clean build (two swipes, level rose to 4).
+- Screenshots: `build/final_menu.png`, `build/final_resume.png`,
+  `build/final_game.png` (gitignored) and copies in the orchestrator
+  workspace `artifacts/tmp/wave1_device/004-match3_final_*.png`;
+  intermediate evidence `004-match3_fix1_menu.png`, `fix1_game*.png`,
+  `004-match3_fix2_game*.png` in the same dir.
+- Final APK `build/match3.apk` = 28,664,148 bytes, arm64-v8a only, signed.
+- Temporary M3DBG prints and the headless layout probe were removed before
+  the final commit; privacy scan re-run clean (worktree + history).
+
+### Reproduce (device part)
+
+```sh
+godot --headless --path . --export-debug "Android" build/match3.apk
+adb -s <A54-serial> install -r build/match3.apk
+adb -s <A54-serial> shell am force-stop com.cykagent.match3
+adb -s <A54-serial> shell am start -n com.cykagent.match3/com.godot.game.GodotAppLauncher
+# sleep ~9, then:
+adb -s <A54-serial> shell screencap -p /sdcard/m3.png && adb -s <A54-serial> pull /sdcard/m3.png menu.png
+adb -s <A54-serial> shell input tap 540 1067          # New Game
+adb -s <A54-serial> shell input swipe 460 1073 620 1073 300   # adjacent-cell swap
+```
+
+Board cell centers on the 1080x2340 screen: (140+160*col, 592+160*row)
+approx, after `_place_grid` centering; menu New Game center (540,1067).
