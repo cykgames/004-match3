@@ -10,6 +10,11 @@ const UiGameOverPrefab = preload("res://scenes/game_over.tscn")
 var ui_game = null
 var ui_game_over = null
 
+# Best-score persistence for the title screen (branding pass). Lives in
+# user:// so it survives restarts; no gameplay values are touched.
+const BEST_SCORE_FILE := "user://spooky_swap_best.cfg"
+var _best_score := 0
+
 func _ready():
     # Desktop convenience only; on phones the window IS the screen.
     if not (OS.has_feature("android") or OS.has_feature("ios")):
@@ -23,8 +28,14 @@ func _ready():
     # centered on the origin. Size them against the viewport instead.
     get_viewport().size_changed.connect(_refit_ui)
     _fit_ui(ui_menu)
+    _best_score = _load_best_score()
+    _refresh_best_label()
 
 func on_game_over(score):
+    if int(score) > _best_score:
+        _best_score = int(score)
+        _save_best_score()
+    _refresh_best_label()
     _clear_ui_game_over()
     ui_game_over = UiGameOverPrefab.instantiate()
     ui_game_over.init(score)
@@ -67,6 +78,7 @@ func restart_game():
 func back_to_menu():
     _clear_ui_game()
     _clear_ui_game_over()
+    _refresh_best_label()
 
 # The game / game-over screens can free themselves (game_over signal,
 # "Main Menu" button), so references may be freed instances: always guard
@@ -95,3 +107,19 @@ func _go_back():
         _clear_ui_game()
     else:
         get_tree().quit()
+
+func _load_best_score() -> int:
+    var cfg := ConfigFile.new()
+    if cfg.load(BEST_SCORE_FILE) != OK:
+        return 0
+    return int(cfg.get_value("score", "best", 0))
+
+func _save_best_score() -> void:
+    var cfg := ConfigFile.new()
+    cfg.set_value("score", "best", _best_score)
+    cfg.save(BEST_SCORE_FILE)
+
+func _refresh_best_label() -> void:
+    var lbl := get_node_or_null("MainMenuUI/Background/MarginContainer/HBoxContainer/BestScore") as Label
+    if lbl != null:
+        lbl.text = "BEST %d" % _best_score

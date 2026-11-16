@@ -8,8 +8,9 @@ class_name PieceGroupTweener
 
 signal animate_score_finished
 signal animate_position_finished
-const ScoreLabelPrefab = preload("res://scenes/floating_score_label.tscn")
+const ScoreSound = preload("res://assets/audio/score.mp3")
 const SCORE_DURATION_SEC = 0.1
+const MAX_COMBO_PITCH = 5
 const POSITION_DURATION_SEC = 0.1
 var _active_count = 0
 
@@ -24,15 +25,26 @@ func animate_score(pieces: Array, multiplier, combo):
         t.tween_property(p, "scale", Vector2(0, 0), SCORE_DURATION_SEC)
         _active_count += 1
         t.connect("finished", func():
-            var score = p.on_score(multiplier)
-            var score_label = ScoreLabelPrefab.instantiate()
-            score_label.init(score, combo)
-            score_label.global_position = p.global_position
-            get_tree().get_root().add_child(score_label)
+            p.on_score(multiplier)
+            _play_score_sound(combo)
             await get_tree().create_timer(0.3).timeout
             _active_count -= 1
             if _active_count == 0: animate_score_finished.emit()
         )
+
+## Score blip without the old per-piece numeric popup: that popup lingered
+## over cleared cells mid-cascade and read as a broken gray tile (a digit
+## where piece art should be). The HUD score is the only numeric readout.
+func _play_score_sound(combo: int) -> void:
+    if AudioServer.get_driver_name() == "Dummy":
+        return
+    var player := AudioStreamPlayer.new()
+    player.stream = ScoreSound
+    player.volume_db = -7.0
+    player.pitch_scale = 1 + mini(combo, MAX_COMBO_PITCH) * 0.1
+    get_tree().get_root().add_child(player)
+    player.play()
+    player.finished.connect(player.queue_free)
 
 func animate_position(pieces: Array, len_x: int, spacement: int, sprite_size: int):
     if _active_count != 0: return
