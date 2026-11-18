@@ -42,3 +42,14 @@ func on_score(multiplier):
     var score = _piece_res.points * multiplier
     Events.piece_scored.emit(int(score))
     return score
+
+func set_selected(on: bool) -> void:
+    # Tap-tap selection affordance (fun-review H3): brighten tint + ~10%
+    # scale so the picked piece is obvious. Cleared before any swap/score
+    # animation, so it never fights the piece tweener.
+    texture_rect.pivot_offset = texture_rect.size / 2.0
+    var target_scale := Vector2(1.1, 1.1) if on else Vector2.ONE
+    var target_mod := Color(1.3, 1.3, 1.35) if on else Color.WHITE
+    var tw := create_tween().set_parallel(true)
+    tw.tween_property(texture_rect, "scale", target_scale, 0.08)
+    tw.tween_property(texture_rect, "modulate", target_mod, 0.08)

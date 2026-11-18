@@ -12,3 +12,10 @@ func init(score):
 
 func _on_button_pressed():
     self.queue_free()
+
+func _on_retry_pressed():
+    # Restart straight into a new game (no trip through the main menu).
+    # main.gd owns restart_game(); this overlay is its direct child.
+    var m = get_parent()
+    if m != null and m.has_method("restart_game"):
+        m.restart_game()

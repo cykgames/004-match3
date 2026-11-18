@@ -28,6 +28,9 @@ var _last_match_type: Match3Core.MatchType
 var _combo_count = 0
 # the array containin the pieces
 var pieces: Array[Piece] = []
+# Tap-tap selection (fun-review H3): first tap selects, second adjacent tap
+# swaps. Drag-and-drop still routes through Events.swap_requested unchanged.
+var _selected: Piece = null
 # most of the "match_3 logic" goes in there
 # if a function needs to change the state, it will be in 
 # this script instead
@@ -75,6 +78,7 @@ func swap_pieces(a, b) -> void:
 ## Swap all pieces. Each piece goes to a new random spot.
 func on_shuffle_requested() -> void:
     assert(not action_locked)
+    _clear_selection()
     
     Events.current_level -= 1
     lock_actions()
@@ -105,6 +109,7 @@ func on_shuffle_requested() -> void:
 
 ## Emited when the user press the swap button. Can or cannot happen.
 func on_swap_requested(a, b) -> void:
+    _clear_selection()
     if action_locked:
         return
     if not are_neighbors(a.index, b.index):
@@ -121,6 +126,36 @@ func on_swap_requested(a, b) -> void:
     unlock_actions()
     try_next_match()
 
+## Tap-tap selection handler: first tap picks a piece, a second tap on an
+## adjacent piece swaps them; tapping the same piece deselects; a tap on a
+## non-adjacent piece moves the selection. Mirrors the drag swap path by
+## emitting the same Events.swap_requested signal.
+func _on_piece_clicked(p: Piece) -> void:
+    if action_locked:
+        return
+    if not p._interactable:
+        return
+    if _selected == null:
+        _selected = p
+        p.set_selected(true)
+    elif _selected == p:
+        _selected.set_selected(false)
+        _selected = null
+    elif are_neighbors(_selected.index, p.index):
+        var a := _selected
+        a.set_selected(false)
+        _selected = null
+        Events.swap_requested.emit(a, p)
+    else:
+        _selected.set_selected(false)
+        _selected = p
+        p.set_selected(true)
+
+func _clear_selection() -> void:
+    if _selected != null and is_instance_valid(_selected):
+        _selected.set_selected(false)
+    _selected = null
+
 ## Create a new piece and add it as a child.  
 func create_piece_as_child(index) -> Piece:
     var new_piece = PiecePrefab.instantiate()
@@ -136,6 +171,7 @@ func create_piece_as_child(index) -> Piece:
     new_piece.position = p_pos
     add_child(new_piece)
     new_piece.index = index
+    new_piece.piece_clicked.connect(_on_piece_clicked)
     
     return new_piece
 
